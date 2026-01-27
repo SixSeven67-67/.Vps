@@ -1,0 +1,46 @@
+name: VPS Webtop 14GB - Cloudflare (6 Horas)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  vps-session:
+    runs-on: ubuntu-latest
+    # Tiempo límite estricto de GitHub: 6 horas (360 min)
+    timeout-minutes: 360
+    
+    steps:
+      - name: "1. Preparar Entorno"
+        uses: actions/checkout@v4
+
+      - name: "2. Desplegar Webtop (XFCE - 14GB RAM)"
+        run: |
+          # Iniciamos Webtop en segundo plano (-d)
+          # Puerto 3000 expuesto localmente para que lo tome el túnel
+          docker run -d \
+            --name=webtop \
+            --security-opt seccomp=unconfined \
+            -e PUID=1000 -e PGID=1000 \
+            -e TZ=America/Caracas \
+            -p 3000:3000 \
+            --memory="14g" \
+            --memory-swap="14g" \
+            --shm-size="4gb" \
+            lscr.io/linuxserver/webtop:ubuntu-xfce
+            
+          echo "Webtop arrancando... esperando estabilidad..."
+          sleep 10
+
+      - name: "3. Crear Túnel Cloudflare (Mantener Vivo)"
+        run: |
+          echo "---------------------------------------------------------"
+          echo " INSTRUCCIONES:"
+          echo " 1. Espera a que carguen los logs abajo."
+          echo " 2. Busca la URL que termina en 'trycloudflare.com'."
+          echo "    Ejemplo: https://heavy-metal-dog-radio.trycloudflare.com"
+          echo " 3. Entra a esa URL para ver tu escritorio."
+          echo "---------------------------------------------------------"
+          
+          # Ejecutamos Cloudflare Tunnel apuntando al puerto 3000 local
+          # Al no usar '-d', este comando se queda corriendo y mantiene la VPS viva
+          docker run --rm --net=host cloudflare/cloudflared:latest tunnel --url http://localhost:3000
