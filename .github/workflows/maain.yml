@@ -1,0 +1,48 @@
+name: VPS OptiOS 8.1 Gamer (14GB RAM)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  windows-opti:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360 # 6 Horas exactas
+    
+    steps:
+      - name: "1. Preparar KVM (Acelerador)"
+        run: |
+          sudo apt-get update -y
+          sudo chown $USER /dev/kvm
+          echo "KVM activado para que Windows 8.1 vuele."
+
+      - name: "2. Desplegar OptiOS 8.1"
+        run: |
+          # Usamos tu link directo de la ISO
+          # VERSION: "win81" ayuda al contenedor a saber qué drivers preparar
+          docker run -d \
+            --name=windows \
+            --device=/dev/kvm \
+            --cap-add NET_ADMIN \
+            -p 8006:8006 \
+            -e RAM_SIZE="14G" \
+            -e CPU_CORES="4" \
+            -e DISK_SIZE="64G" \
+            -e VERSION="win81" \
+            -e CUSTOM_ISO="https://www.mediafire.com/file/fbgdr9993u39ik6?dkey=bx8h6qzqtzq&r=1551" \
+            dockur/windows
+            
+          echo "Descargando OptiOS e iniciando..."
+          echo "Esto tardará unos 3-5 minutos en arrancar la instalación."
+          sleep 30
+
+      - name: "3. Crear Túnel Web (Acceso)"
+        run: |
+          echo "---------------------------------------------------------"
+          echo " TU WINDOWS GAMER ESTÁ INICIANDO"
+          echo " 1. Espera el link de 'trycloudflare' abajo."
+          echo " 2. Al entrar, verás la instalación de Windows."
+          echo " 3. NOTA IMPORTANTE: Si no ves el disco duro al instalar,"
+          echo "    busca la opción 'Cargar Controlador' -> CD VirtIO -> amd64 -> w8.1"
+          echo "---------------------------------------------------------"
+          
+          docker run --rm --net=host cloudflare/cloudflared:latest tunnel --url http://localhost:8006
