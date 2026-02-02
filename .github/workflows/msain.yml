@@ -1,9 +1,9 @@
-name: VPS Windows Lite + NoMachine AUTOMÁTICO (Rendimiento Extremo)
+name: VPS NoMachine 100% DIRECTO
 
 on:
   workflow_dispatch:
 
-jobs:
+jobs
   windows-nomachine-session:
     runs-on: ubuntu-latest
     timeout-minutes: 360 # 6 Horas
@@ -12,28 +12,18 @@ jobs:
       - name: "1. Habilitar Aceleración KVM"
         run: sudo chown $USER /dev/kvm
 
-      - name: "2. Preparar los Extras para Windows"
+      - name: "2. Preparar Instalador Automático de NoMachine"
         run: |
-          # Creamos una carpeta que actuará como un CD-ROM virtual
           mkdir -p extras
           cd extras
-          
-          # Descargamos el instalador de NoMachine dentro de esa carpeta
-          echo "Descargando NoMachine..."
           wget -q https://download.nomachine.com/download/8.11/Windows/nomachine_8.11.3_4_x86_64.exe -O nomachine.exe
-          
-          # Creamos un archivo 'autorun.cmd' que se ejecutará solo
-          # Esto instalará NoMachine silenciosamente (-S) y borrará el instalador.
-          echo "Creando script de autoinstalación..."
           echo '@echo off' > autorun.cmd
           echo 'start /wait "" "%~dp0nomachine.exe" /S' >> autorun.cmd
           echo 'del "%~dp0nomachine.exe"' >> autorun.cmd
           echo 'del "%~f0"' >> autorun.cmd
 
-      - name: "3. Desplegar Windows Lite + NoMachine Integrado"
+      - name: "3. Desplegar Windows con NoMachine Integrado"
         run: |
-          # Iniciamos el contenedor montando nuestra carpeta 'extras' como un CD-ROM
-          # y usamos el flag '-fda' para que la vea como unidad A:
           docker run -d \
             --name=windows \
             --device=/dev/kvm \
@@ -47,16 +37,13 @@ jobs:
             -e FLAGS="-drive file=/mnt/extras,index=2,media=cdrom" \
             ghcr.io/dockur/windows
             
-          echo "Windows Lite se está instalando..."
-          echo "NoMachine se instalará automáticamente al primer inicio."
+          echo "Windows se está instalando y NoMachine se instalará solo."
+          echo "Espera unos 5-10 minutos antes de intentar conectar."
           sleep 90
 
-      - name: "4. Crear Túnel Directo de NoMachine"
+      - name: "4. Crear TÚNEL ÚNICO para NoMachine"
         run: |
           echo "---------------------------------------------------------"
-          echo "DIRECCIÓN DE CONEXIÓN PARA EL CLIENTE NOMACHINE:"
-          echo "Busca la dirección TCP en los logs y úsala para conectar."
-          echo "¡LA INSTALACIÓN DE NOMACHINE ES AUTOMÁTICA!"
-          echo "El primer arranque puede tardar unos minutos más."
+          echo "CONECTA USANDO ESTA DIRECCIÓN EN EL CLIENTE NOMACHINE:"
           echo "---------------------------------------------------------"
           docker run --rm --net=host cloudflare/cloudflared:latest tunnel --url tcp://localhost:4000
